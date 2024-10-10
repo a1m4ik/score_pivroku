@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Півріччя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        #container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        #comments {
+            margin-top: 20px;
+        }
+        .comment {
+            background-color: #f0f0f0;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input {
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        #loginForm {
+            text-align: center;
+        }
+        #welcomeMessage {
+            text-align: center;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Форма входу -->
+        <div id="loginForm">
+            <h1>Авторизація</h1>
+            <input type="text" id="login" placeholder="Логін">
+            <input type="password" id="password" placeholder="Пароль">
+            <button onclick="login()">Увійти</button>
+        </div>
+        
+        <!-- Вміст для авторизованих користувачів -->
+        <div id="content" style="display:none;">
+            <h1>Півріччя</h1>
+            <h2 id="currentAmount">0/40</h2>
+            <div id="welcomeMessage">Привіт, <span id="username"></span>!</div>
+
+            <input type="number" id="amount" placeholder="Введіть число для додавання/віднімання">
+            <input type="text" id="comment" placeholder="Коментар">
+            
+            <button onclick="changeAmount('add')">Додати</button>
+            <button onclick="changeAmount('subtract')">Відняти</button>
+
+            <div id="comments">
+                <h3>Історія операцій:</h3>
+                <div id="history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const users = {
+            'Darlis': 'goyda4308',
+            'Kokhanyi': 'goydaAZOV'
+        };
+
+        let currentUser = null;
+        let currentAmount = parseFloat(localStorage.getItem('amount')) || 0;
+        let maxAmount = 40; // Максимальне значення для рахунку
+        let history = JSON.parse(localStorage.getItem('history')) || [];
+
+        // Функція для входу
+        function login() {
+            const loginInput = document.getElementById('login').value;
+            const passwordInput = document.getElementById('password').value;
+
+            if (users[loginInput] && users[loginInput] === passwordInput) {
+                currentUser = loginInput;
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                document.getElementById('username').innerText = currentUser;
+
+                // Оновлюємо відображення рахунку і історію
+                document.getElementById('currentAmount').innerText = `${currentAmount}/${maxAmount}`;
+                loadHistory();
+            } else {
+                alert("Неправильний логін або пароль!");
+            }
+        }
+
+        // Оновлення історії операцій
+        function loadHistory() {
+            const historyContainer = document.getElementById('history');
+            historyContainer.innerHTML = ''; // Очищуємо поточну історію
+            history.forEach(entry => {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('comment');
+                commentElement.innerHTML = `<strong>${entry.date}</strong> (Користувач: ${entry.user}): ${entry.type} ${entry.amount}. Коментар: ${entry.comment}`;
+                historyContainer.appendChild(commentElement);
+            });
+        }
+
+        loadHistory(); // Оновлюємо історію при завантаженні сторінки
+
+        // Функція для зміни рахунку
+        function changeAmount(type) {
+            const amountInput = document.getElementById('amount');
+            const commentInput = document.getElementById('comment');
+            const amount = parseFloat(amountInput.value);
+            const comment = commentInput.value || "Без коментаря";
+
+            if (isNaN(amount)) {
+                alert("Введіть коректне число!");
+                return;
+            }
+
+            if (type === 'add') {
+                currentAmount += amount;
+            } else if (type === 'subtract') {
+                currentAmount -= amount;
+            }
+
+            // Перевіряємо, щоб рахунок не перевищував максимум і не був нижче 0
+            currentAmount = Math.min(Math.max(currentAmount, 0), maxAmount);
+
+            // Оновлюємо відображення поточного рахунку
+            document.getElementById('currentAmount').innerText = `${currentAmount}/${maxAmount}`;
+
+            // Зберігаємо дані в localStorage
+            localStorage.setItem('amount', currentAmount);
+
+            // Додаємо операцію в історію
+            const date = new Date().toLocaleString();
+            const entry = {
+                type: type === 'add' ? 'Додано' : 'Віднято',
+                amount: amount,
+                comment: comment,
+                date: date,
+                user: currentUser // Додаємо користувача до запису
+            };
+            history.push(entry);
+            localStorage.setItem('history', JSON.stringify(history));
+
+            // Очищаємо поля введення
+            amountInput.value = '';
+            commentInput.value = '';
+
+            // Оновлюємо історію на сторінці
+            loadHistory();
+        }
+    </script>
+</body>
+</html>
